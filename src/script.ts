@@ -1,7 +1,7 @@
 import { Image } from "canvas";
 import { TextAlignMode } from "./types";
 import { CanvasImageTransform } from "./insert";
-import sharp = require("sharp");
+import sharp from "sharp";
 import { getCanvasFontName } from "./utils";
 interface RangeFontSizeInfo{
     fontName:string,

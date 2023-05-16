@@ -8,11 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInsertTextOverImageObject = exports.getBetterFontSize = exports.getFontWithTextInfo = exports.getRangeFontSize = exports.getFontCentralRecomendedValue = exports.insertTextOverImage = void 0;
 const types_1 = require("./types");
 const insert_1 = require("./insert");
-const sharp = require("sharp");
+const sharp_1 = __importDefault(require("sharp"));
 const utils_1 = require("./utils");
 function insertTextOverImage(image, width, height) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -295,7 +298,7 @@ exports.getBetterFontSize = getBetterFontSize;
 function getInsertTextOverImageObject(img) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const baseImage = sharp(img);
+            const baseImage = (0, sharp_1.default)(img);
             const metaData = yield baseImage.metadata();
             if (!metaData.width || !metaData.height)
                 throw "error to get metadata";
