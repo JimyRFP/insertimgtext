@@ -23,7 +23,8 @@ class CanvasImageTransform {
     loadImage() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                if (this._paramImage instanceof canvas_1.Image) {
+                if (typeof window !== 'undefined' || this._paramImage instanceof canvas_1.Image) {
+                    //@ts-ignore
                     this._image = this._paramImage;
                 }
                 else {

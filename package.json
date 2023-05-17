@@ -1,6 +1,6 @@
 {
   "name": "imagetextinsert",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
@@ -9,8 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "canvas": "^2.11.2",
-    "sharp": "^0.32.1"
+    "canvas": "^2.11.2"
   },
   "devDependencies": {
     "@types/node": "^20.1.5"

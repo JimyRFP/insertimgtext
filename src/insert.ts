@@ -16,8 +16,10 @@ export class CanvasImageTransform{
     }
     async loadImage(){
       try{
-        if(this._paramImage instanceof Image){
-          this._image=this._paramImage;
+
+        if(typeof window!=='undefined'||this._paramImage instanceof Image){
+           //@ts-ignore
+           this._image=this._paramImage;
         }else{
           this._image=await loadImage(this._paramImage)
         }

@@ -1,7 +1,6 @@
 import { Image } from "canvas";
 import { TextAlignMode } from "./types";
 import { CanvasImageTransform } from "./insert";
-import sharp from "sharp";
 import { getCanvasFontName } from "./utils";
 interface RangeFontSizeInfo{
     fontName:string,
@@ -50,10 +49,7 @@ export async function insertTextOverImage(image:string|Buffer|Image,width:number
            });
         }
         
-        let addx=0;
-        if(config.alignMode===TextAlignMode.center){
-           addx=config.maxWidth/2;
-        }
+        
         let startY=config.ys;
         if(config.centerHeight){
             let addy=(config.maxHeight-betterFontSize.totalHeight)/2;
@@ -62,7 +58,13 @@ export async function insertTextOverImage(image:string|Buffer|Image,width:number
             }
         }
         for(let index=0;index<betterFontSize.texts.length;index++){
-            let iText=betterFontSize.texts[index].trim();
+            let iText=betterFontSize.texts[index];
+            let addx=0;
+            if(config.alignMode===TextAlignMode.center){
+
+              //  addx=Math.max(0,(config.maxWidth-betterFontSize.measure[index].width)/2);
+                addx+=config.maxWidth/2;
+            }
             await canvas.insertText({
                 text:iText,
                 font:betterFontSize.fontName,
@@ -189,12 +191,8 @@ export function getRangeFontSize(canva:CanvasImageTransform,text:string,config:{
    try{
       let texts:Array<RangeFontSizeInfo>=[];
       const {font,maxWidth}=config;
-      const factor=font.size*0.03;
-      const range=10;
-      for(let i=-range;i<=3*range;i++){
-           let cFontSize=Math.floor(font.size+(i*factor));
-           if(cFontSize==0)
-              continue;
+      for(let i=1;i<=4*Math.max(8,Math.floor(font.size));i++){
+           let cFontSize=i;
            texts.push(getFontWithTextInfo(canva,text,cFontSize,config))
       }
       return texts;
@@ -204,12 +202,13 @@ export function getRangeFontSize(canva:CanvasImageTransform,text:string,config:{
 }
 export function getFontWithTextInfo(canva:CanvasImageTransform,text:string,fontSize:number,config:{maxWidth:number,font:{size:number,family:string,path?:string},breakLineSpacing?:number}){
     try{
+           const useText=text.trim();
            const {font,maxWidth}=config;
            let fontName=getCanvasFontName({family:font.family},fontSize);
-           const measure=canva.measureText(text,fontName);
-           const sizePerChar=measure.width/text.length;
-           let tempTexts=separeTextIfMaxWidth(sizePerChar,maxWidth,text);
-           let totalHeight=tempTexts.length*(fontSize+(config.breakLineSpacing||0));
+           const measure=canva.measureText(useText,fontName);
+           const sizePerChar=measure.width/useText.length;
+           let tempTexts=separeTextIfMaxWidth(sizePerChar,maxWidth,useText);
+           let totalHeight=(tempTexts.length*(fontSize))+((config.breakLineSpacing||0)*(tempTexts.length-1));
            let ret={
              fontName,
              lines:tempTexts.length,
@@ -237,27 +236,25 @@ export function getFontWithTextInfo(canva:CanvasImageTransform,text:string,fontS
 
 }
 
-export function getBetterFontSize(datas:Array<RangeFontSizeInfo>,config:{maxHeight?:number,maxWidth:number,maxLines?:number,passMaxWidthTolerance?:number}){
+export function getBetterFontSize(datas:Array<RangeFontSizeInfo>,config:{maxHeight:number,maxWidth:number,maxLines?:number,passMaxWidthTolerance?:number}){
    try{
      let filteredData:Array<RangeFontSizeInfo>=[];
      const passMaxWidthTolerance=config.passMaxWidthTolerance||0;
-     const {maxWidth}=config;
+     const {maxWidth,maxHeight}=config;
+     const minHeight=maxHeight*0.7;
      for(let data of datas){
-        if(config.maxHeight){
-            if(data.totalHeight>config.maxHeight)
-              continue;
-        }
+        if(data.totalHeight>maxHeight||data.totalHeight<minHeight)
+           continue;
         filteredData.push(data);
      }
+    
      let widthInfo=getMaxWidthDiference(filteredData,maxWidth);
      let lowerIndex=-1;
      let lowerMaxDistance=+Infinity;
      for(let i=0;i<widthInfo.length;i++){
         let info=widthInfo[i];
         if(info.lower<0&&-info.lower>passMaxWidthTolerance)
-           continue;   
-        if(config.maxLines&&info.lines>config.maxLines)
-           continue;   
+           continue;    
         let uselower=info.lines===1?info.lower:info.greaterWithoutLast;   
         if(uselower<lowerMaxDistance){
             lowerMaxDistance=uselower;
@@ -313,16 +310,10 @@ export function getBetterFontSize(datas:Array<RangeFontSizeInfo>,config:{maxHeig
 }
 
 
-export async function getInsertTextOverImageObject(img:Buffer){
+export async function getInsertTextOverImageObject(img:Buffer,width:number,height:number){
    try{
-    const baseImage=sharp(img);
-    const metaData=await baseImage.metadata();
-    if(!metaData.width||!metaData.height)
-       throw "error to get metadata";
-    const insertTextOverImageObj=await insertTextOverImage(img,metaData.width,metaData.height);
+    const insertTextOverImageObj=await insertTextOverImage(img,width,height);
     return {
-        baseImage,
-        metaData,
         insert,
         insertTextOverImageObj,
     }

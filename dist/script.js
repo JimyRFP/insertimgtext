@@ -8,14 +8,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInsertTextOverImageObject = exports.getBetterFontSize = exports.getFontWithTextInfo = exports.getRangeFontSize = exports.getFontCentralRecomendedValue = exports.insertTextOverImage = void 0;
 const types_1 = require("./types");
 const insert_1 = require("./insert");
-const sharp_1 = __importDefault(require("sharp"));
 const utils_1 = require("./utils");
 function insertTextOverImage(image, width, height) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -36,10 +32,6 @@ function insertTextOverImage(image, width, height) {
                             family: config.font.family,
                         });
                     }
-                    let addx = 0;
-                    if (config.alignMode === types_1.TextAlignMode.center) {
-                        addx = config.maxWidth / 2;
-                    }
                     let startY = config.ys;
                     if (config.centerHeight) {
                         let addy = (config.maxHeight - betterFontSize.totalHeight) / 2;
@@ -48,7 +40,12 @@ function insertTextOverImage(image, width, height) {
                         }
                     }
                     for (let index = 0; index < betterFontSize.texts.length; index++) {
-                        let iText = betterFontSize.texts[index].trim();
+                        let iText = betterFontSize.texts[index];
+                        let addx = 0;
+                        if (config.alignMode === types_1.TextAlignMode.center) {
+                            //  addx=Math.max(0,(config.maxWidth-betterFontSize.measure[index].width)/2);
+                            addx += config.maxWidth / 2;
+                        }
                         yield canvas.insertText({
                             text: iText,
                             font: betterFontSize.fontName,
@@ -177,12 +174,8 @@ function getRangeFontSize(canva, text, config) {
     try {
         let texts = [];
         const { font, maxWidth } = config;
-        const factor = font.size * 0.03;
-        const range = 10;
-        for (let i = -range; i <= 3 * range; i++) {
-            let cFontSize = Math.floor(font.size + (i * factor));
-            if (cFontSize == 0)
-                continue;
+        for (let i = 1; i <= 4 * Math.max(8, Math.floor(font.size)); i++) {
+            let cFontSize = i;
             texts.push(getFontWithTextInfo(canva, text, cFontSize, config));
         }
         return texts;
@@ -194,12 +187,13 @@ function getRangeFontSize(canva, text, config) {
 exports.getRangeFontSize = getRangeFontSize;
 function getFontWithTextInfo(canva, text, fontSize, config) {
     try {
+        const useText = text.trim();
         const { font, maxWidth } = config;
         let fontName = (0, utils_1.getCanvasFontName)({ family: font.family }, fontSize);
-        const measure = canva.measureText(text, fontName);
-        const sizePerChar = measure.width / text.length;
-        let tempTexts = separeTextIfMaxWidth(sizePerChar, maxWidth, text);
-        let totalHeight = tempTexts.length * (fontSize + (config.breakLineSpacing || 0));
+        const measure = canva.measureText(useText, fontName);
+        const sizePerChar = measure.width / useText.length;
+        let tempTexts = separeTextIfMaxWidth(sizePerChar, maxWidth, useText);
+        let totalHeight = (tempTexts.length * (fontSize)) + ((config.breakLineSpacing || 0) * (tempTexts.length - 1));
         let ret = {
             fontName,
             lines: tempTexts.length,
@@ -231,12 +225,11 @@ function getBetterFontSize(datas, config) {
     try {
         let filteredData = [];
         const passMaxWidthTolerance = config.passMaxWidthTolerance || 0;
-        const { maxWidth } = config;
+        const { maxWidth, maxHeight } = config;
+        const minHeight = maxHeight * 0.7;
         for (let data of datas) {
-            if (config.maxHeight) {
-                if (data.totalHeight > config.maxHeight)
-                    continue;
-            }
+            if (data.totalHeight > maxHeight || data.totalHeight < minHeight)
+                continue;
             filteredData.push(data);
         }
         let widthInfo = getMaxWidthDiference(filteredData, maxWidth);
@@ -245,8 +238,6 @@ function getBetterFontSize(datas, config) {
         for (let i = 0; i < widthInfo.length; i++) {
             let info = widthInfo[i];
             if (info.lower < 0 && -info.lower > passMaxWidthTolerance)
-                continue;
-            if (config.maxLines && info.lines > config.maxLines)
                 continue;
             let uselower = info.lines === 1 ? info.lower : info.greaterWithoutLast;
             if (uselower < lowerMaxDistance) {
@@ -295,17 +286,11 @@ function getBetterFontSize(datas, config) {
     }
 }
 exports.getBetterFontSize = getBetterFontSize;
-function getInsertTextOverImageObject(img) {
+function getInsertTextOverImageObject(img, width, height) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const baseImage = (0, sharp_1.default)(img);
-            const metaData = yield baseImage.metadata();
-            if (!metaData.width || !metaData.height)
-                throw "error to get metadata";
-            const insertTextOverImageObj = yield insertTextOverImage(img, metaData.width, metaData.height);
+            const insertTextOverImageObj = yield insertTextOverImage(img, width, height);
             return {
-                baseImage,
-                metaData,
                 insert,
                 insertTextOverImageObj,
             };
