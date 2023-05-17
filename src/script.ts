@@ -2,6 +2,7 @@ import { Image } from "canvas";
 import { TextAlignMode } from "./types";
 import { CanvasImageTransform } from "./insert";
 import { getCanvasFontName } from "./utils";
+
 interface RangeFontSizeInfo{
     fontName:string,
     texts:Array<string>,
@@ -105,7 +106,8 @@ export async function insertTextOverImage(image:string|Buffer|Image,width:number
             },
             breakLineSpacing:breakLineSpacing,
         });
-        betterFontSize=getBetterFontSize(fontRanges,{maxWidth:config.maxWidth,maxHeight:config.maxHeight,maxLines:config.maxLines});
+        betterFontSize=getBetterFontSize(fontRanges,{maxWidth:config.maxWidth,maxHeight:config.maxHeight});
+        
         if(!betterFontSize){
             if(fontRanges.length<3){
                 betterFontSize=fontRanges[0];
@@ -140,13 +142,7 @@ export function getFontCentralRecomendedValue(canva:CanvasImageTransform,text:st
         return total/baseValues.length;
     }
     function getHeightConst(){
-        const baseValues=[46];
-        let total=0;
-        for(let i=0;i<baseValues.length;i++){
-            let msr=canva.measureText(text,getCanvasFontName({family:fontFamily},baseValues[i]));
-            total+=baseValues[i]/(msr.actualBoundingBoxAscent+msr.actualBoundingBoxDescent);
-        }
-        return total/baseValues.length;
+        return 1;
     }
 }
 
@@ -209,6 +205,7 @@ export function getFontWithTextInfo(canva:CanvasImageTransform,text:string,fontS
            const sizePerChar=measure.width/useText.length;
            let tempTexts=separeTextIfMaxWidth(sizePerChar,maxWidth,useText);
            let totalHeight=(tempTexts.length*(fontSize))+((config.breakLineSpacing||0)*(tempTexts.length-1));
+           
            let ret={
              fontName,
              lines:tempTexts.length,
@@ -220,14 +217,14 @@ export function getFontWithTextInfo(canva:CanvasImageTransform,text:string,fontS
                  let msr=canva.measureText(text,fontName);
                  return {
                     width:msr.width,
-                    height:msr.actualBoundingBoxAscent+msr.actualBoundingBoxDescent,
+                    height:fontSize,
                  }
              })
            };
            totalHeight=(ret.lines-1)*(config.breakLineSpacing||0);
            ret.measure.map((msr:any)=>{
                 totalHeight+=msr.height;
-           })
+           });
            ret.totalHeight=totalHeight;
            return ret;
     }catch(e){
@@ -236,18 +233,15 @@ export function getFontWithTextInfo(canva:CanvasImageTransform,text:string,fontS
 
 }
 
-export function getBetterFontSize(datas:Array<RangeFontSizeInfo>,config:{maxHeight:number,maxWidth:number,maxLines?:number,passMaxWidthTolerance?:number}){
+export function getBetterFontSize(datas:Array<RangeFontSizeInfo>,config:{maxHeight:number,maxWidth:number,passMaxWidthTolerance?:number}){
    try{
-     let filteredData:Array<RangeFontSizeInfo>=[];
+     
      const passMaxWidthTolerance=config.passMaxWidthTolerance||0;
      const {maxWidth,maxHeight}=config;
-     const minHeight=maxHeight*0.7;
-     for(let data of datas){
-        if(data.totalHeight>maxHeight||data.totalHeight<minHeight)
-           continue;
-        filteredData.push(data);
+     let filteredData=filterByHeight(maxHeight,maxHeight*0.5);
+     if(filteredData.length<1){
+        filteredData=filterByHeight(maxHeight,maxHeight*0.4);
      }
-    
      let widthInfo=getMaxWidthDiference(filteredData,maxWidth);
      let lowerIndex=-1;
      let lowerMaxDistance=+Infinity;
@@ -267,7 +261,15 @@ export function getBetterFontSize(datas:Array<RangeFontSizeInfo>,config:{maxHeig
    }catch(e){
        throw e;
    }
-
+   function filterByHeight(maxHeight:number,minHeight:number){
+        let ret=[];
+        for(let data of datas){
+            if(data.totalHeight>maxHeight||data.totalHeight<minHeight)
+            continue;
+            ret.push(data);
+        }
+        return ret;
+   }
    function getMaxWidthDiference(datas:Array<RangeFontSizeInfo>,maxWidth:number){
        let ret:Array<{
         difs:Array<number>

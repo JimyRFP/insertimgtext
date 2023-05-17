@@ -88,7 +88,7 @@ function insertTextOverImage(image, width, height) {
                     },
                     breakLineSpacing: breakLineSpacing,
                 });
-                betterFontSize = getBetterFontSize(fontRanges, { maxWidth: config.maxWidth, maxHeight: config.maxHeight, maxLines: config.maxLines });
+                betterFontSize = getBetterFontSize(fontRanges, { maxWidth: config.maxWidth, maxHeight: config.maxHeight });
                 if (!betterFontSize) {
                     if (fontRanges.length < 3) {
                         betterFontSize = fontRanges[0];
@@ -124,13 +124,7 @@ function getFontCentralRecomendedValue(canva, text, fontFamily, maxWidth, maxHei
         return total / baseValues.length;
     }
     function getHeightConst() {
-        const baseValues = [46];
-        let total = 0;
-        for (let i = 0; i < baseValues.length; i++) {
-            let msr = canva.measureText(text, (0, utils_1.getCanvasFontName)({ family: fontFamily }, baseValues[i]));
-            total += baseValues[i] / (msr.actualBoundingBoxAscent + msr.actualBoundingBoxDescent);
-        }
-        return total / baseValues.length;
+        return 1;
     }
 }
 exports.getFontCentralRecomendedValue = getFontCentralRecomendedValue;
@@ -205,7 +199,7 @@ function getFontWithTextInfo(canva, text, fontSize, config) {
                 let msr = canva.measureText(text, fontName);
                 return {
                     width: msr.width,
-                    height: msr.actualBoundingBoxAscent + msr.actualBoundingBoxDescent,
+                    height: fontSize,
                 };
             })
         };
@@ -223,14 +217,11 @@ function getFontWithTextInfo(canva, text, fontSize, config) {
 exports.getFontWithTextInfo = getFontWithTextInfo;
 function getBetterFontSize(datas, config) {
     try {
-        let filteredData = [];
         const passMaxWidthTolerance = config.passMaxWidthTolerance || 0;
         const { maxWidth, maxHeight } = config;
-        const minHeight = maxHeight * 0.7;
-        for (let data of datas) {
-            if (data.totalHeight > maxHeight || data.totalHeight < minHeight)
-                continue;
-            filteredData.push(data);
+        let filteredData = filterByHeight(maxHeight, maxHeight * 0.5);
+        if (filteredData.length < 1) {
+            filteredData = filterByHeight(maxHeight, maxHeight * 0.4);
         }
         let widthInfo = getMaxWidthDiference(filteredData, maxWidth);
         let lowerIndex = -1;
@@ -251,6 +242,15 @@ function getBetterFontSize(datas, config) {
     }
     catch (e) {
         throw e;
+    }
+    function filterByHeight(maxHeight, minHeight) {
+        let ret = [];
+        for (let data of datas) {
+            if (data.totalHeight > maxHeight || data.totalHeight < minHeight)
+                continue;
+            ret.push(data);
+        }
+        return ret;
     }
     function getMaxWidthDiference(datas, maxWidth) {
         let ret = [];
