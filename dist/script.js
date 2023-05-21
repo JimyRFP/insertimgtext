@@ -26,12 +26,6 @@ function insertTextOverImage(image, width, height) {
                 try {
                     const { betterFontSize, breakLineSpacing } = yield findBetterFontSize(config);
                     yield canvas.drawImage(0, 0, width, height);
-                    if (config.font.path) {
-                        canvas.registerFont({
-                            path: config.font.path,
-                            family: config.font.family,
-                        });
-                    }
                     let startY = config.ys;
                     if (config.centerHeight) {
                         let addy = (config.maxHeight - betterFontSize.totalHeight) / 2;

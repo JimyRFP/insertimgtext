@@ -1,4 +1,4 @@
-import { Image,loadImage,createCanvas, Canvas ,registerFont} from "canvas";
+import { Image,loadImage,createCanvas, Canvas } from "canvas";
 import { InsertTextConfig, TextAlignMode, TextCoordinates } from "./types";
 import { CanvasRenderingContext2D } from "canvas";
 
@@ -7,13 +7,12 @@ export class CanvasImageTransform{
     declare _image:Image;
     declare _paramImage:Image|string|Buffer;
     declare _canvas:Canvas;
+    declare createCanvas:Function;
     constructor(width:number,height:number,image:string|Buffer|Image){
         this._paramImage=image;
-        this._canvas=createCanvas(width,height);
+        this.createCanvas=()=>{this._canvas=createCanvas(width,height)};
     }
-    registerFont(font:{path:string,family:string}){
-      registerFont(font.path,{family:font.family});
-    }
+
     async loadImage(){
       try{
 
@@ -43,6 +42,8 @@ export class CanvasImageTransform{
       return context.measureText(text);
     }
     get2dContext():CanvasRenderingContext2D{
+      if(!this._canvas)
+         this.createCanvas();
        return this._canvas.getContext('2d');
     }
     

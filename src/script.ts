@@ -42,14 +42,7 @@ export async function insertTextOverImage(image:string|Buffer|Image,width:number
    async function insert(config:InsertTextOverImageConfig){
     try{
         const {betterFontSize,breakLineSpacing}=await findBetterFontSize(config);
-        await canvas.drawImage(0,0,width,height);
-        if(config.font.path){
-           canvas.registerFont({
-              path:config.font.path,
-              family:config.font.family,
-           });
-        }
-        
+        await canvas.drawImage(0,0,width,height);    
         
         let startY=config.ys;
         if(config.centerHeight){

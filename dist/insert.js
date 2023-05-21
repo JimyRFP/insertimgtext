@@ -15,10 +15,7 @@ const types_1 = require("./types");
 class CanvasImageTransform {
     constructor(width, height, image) {
         this._paramImage = image;
-        this._canvas = (0, canvas_1.createCanvas)(width, height);
-    }
-    registerFont(font) {
-        (0, canvas_1.registerFont)(font.path, { family: font.family });
+        this.createCanvas = () => { this._canvas = (0, canvas_1.createCanvas)(width, height); };
     }
     loadImage() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -55,6 +52,8 @@ class CanvasImageTransform {
         return context.measureText(text);
     }
     get2dContext() {
+        if (!this._canvas)
+            this.createCanvas();
         return this._canvas.getContext('2d');
     }
     insertText(config) {
