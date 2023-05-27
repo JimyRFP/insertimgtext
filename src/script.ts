@@ -48,7 +48,7 @@ export async function insertTextOverImage(image:string|Buffer|Image,width:number
         if(config.centerHeight){
             let addy=(config.maxHeight-betterFontSize.totalHeight)/2;
             if(addy>0){
-               startY+=addy;
+               startY+=Math.floor(addy);
             }
         }
         for(let index=0;index<betterFontSize.texts.length;index++){
